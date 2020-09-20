@@ -1,75 +1,67 @@
-// require는  node.js의 모듈을 요청하기 위한 함수이다. 모듈이랑 노드js의 기능들중 비슷한 기능들을 묶어놓은것
-var http = require('http'); //프로토콜 소환      
-var fs = require('fs');//fs는 파일시스템으로 파일을 읽어오는 역할을 한다.
-var url = require('url')//쿼리스트링을 분석하기 위한 모듈 url을 소환
-
+var http = require('http');
+var fs = require('fs');
+var url = require('url');
+ 
+function templateHTML(title, list, body){
+  return `
+  <!doctype html>
+  <html>
+  <head>
+    <title>WEB1 - ${title}</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <h1><a href="/">WEB</a></h1>
+    ${list}
+    ${body}
+  </body>
+  </html>
+  `;
+}
+function templateList(filelist){
+  var list = '<ul>';
+  var i = 0;
+  while(i < filelist.length){
+    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
+    i = i + 1;
+  }
+  list = list+'</ul>';
+  return list;
+}
+ 
 var app = http.createServer(function(request,response){
+    var _url = request.url;
+    var queryData = url.parse(_url, true).query;
+    var pathname = url.parse(_url, true).pathname;
 
-   
-    var _url = request.url; //request.url 으로 페이지의 요정이 전달된다.(href나 action으로 페이지 이동할때)
-    var quertString=url.parse(_url, true).query;//쿼리스트링 분석(parse)하기위한 변수 생성
-    var pathname=url.parse(_url,true).pathname;//pathname (쿼리스트링을 재외한 패스)
-    
-   //pathname이 /일때 실행부
-    if(pathname=='/'){
-
-        var description="";
-        if(!quertString.id){
-            quertString.id="welcome"
-        }else{
-            description=fs.readFileSync(`./data/${quertString.id}.html`)
-        }
-            var template =`
-        <!doctype html>
-            <html>
-            <head>
-            <title>${quertString.id}의 첫걸음</title>
-            <meta charset="utf-8"><br>
-           
-            </head>
-             <body>
-            <br><br>
-            <h1><a href="/">${quertString.id}</a></h1>
-            <ol>
-                <li><a href="/?id=html">HTML의시작</a></li>
-                <li><a href="/?id=css">css의 시작</a></li>
-                <li><a href="/?id=javascript">javascript의 시작</a></li>
-            </ol>
-    
-            <h1>${quertString.id}의 시작</h1>
-    
-            ${description}
+    if(pathname === '/'){
+      if(queryData.id === undefined){
             
-            </body>
-            </html>
-        `
-        //받아온 url을 통해 페이지 이동() __dirname은 서버 디랙토리 주소이다(D:\dev65\nodejs\graffiti)
-        response.end(template);
-        response.writeHead(200);
-        //200은 파일을 찾을수있다(통신성공)
-        
-        //console.log(fs.readFileSync(__dirname + _url)); 패이징 이동할때 논리적 경로로 html을 보여줄떄 fs.readFileSync(__dirname + _url) 를 response.end()에 넣는다.
-        
-
-
-        //어떠한 if 조건도 만족하지 못한 pathname은 notFound로 표현하자
-    }else{
-        //writehtead(404)는 파일을찾을수 없을때
-        response.writeHead(404);
-        response.end('not found')
+        fs.readdir('./data', function(error, filelist){//파일리스트를 만들어서 보내줌 ./data 폴더안에 있는 리스트를 가져옴
+          var title = 'Welcome';
+          var description = 'Hello, Node.js';
+          var list = templateList(filelist);//파일리스트를 함수안에 넣어서 반복문이 실행되고 그결과를 return함
+          var template = templateHTML(title, list, `<h2>${title}</h2>${description}`);
+          response.writeHead(200);
+          response.end(template);
+        })
+      } else {
+        fs.readdir('./data', function(error, filelist){
+          fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+            var title = queryData.id;
+            var list = templateList(filelist);
+            var template = templateHTML(title, list, `<h2>${title}</h2>${description}`);
+            response.writeHead(200);
+            response.end(template);
+          });
+        });
+      }
+    } else {
+      response.writeHead(404);
+      response.end('Not found');
     }
-   
-
-   
-    
-    // response.end(fs.readFileSync(__dirname+_url)); 파일 시스템을 통해 __dirname+_url의 주소로된 파일을 읽어온다.
-    
+ 
+ 
+ 
 });
-
-//포드번호 설정 기본 포트는 80번
-app.listen(1000);
-
-
-
-
-
+app.listen(3000);
