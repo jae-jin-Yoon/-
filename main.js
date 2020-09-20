@@ -12,6 +12,7 @@ var app = http.createServer(function(request,response){
     
    //pathname이 /일때 실행부
     if(pathname=='/'){
+
         var description="";
         if(!quertString.id){
             quertString.id="welcome"
@@ -47,6 +48,10 @@ var app = http.createServer(function(request,response){
         response.writeHead(200);
         //200은 파일을 찾을수있다(통신성공)
         
+        //console.log(fs.readFileSync(__dirname + _url)); 패이징 이동할때 논리적 경로로 html을 보여줄떄 fs.readFileSync(__dirname + _url) 를 response.end()에 넣는다.
+        
+
+
         //어떠한 if 조건도 만족하지 못한 pathname은 notFound로 표현하자
     }else{
         //writehtead(404)는 파일을찾을수 없을때
@@ -63,3 +68,8 @@ var app = http.createServer(function(request,response){
 
 //포드번호 설정 기본 포트는 80번
 app.listen(1000);
+
+
+
+
+
