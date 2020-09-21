@@ -2,37 +2,15 @@ const http = require('http');
 const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');//post를 분석하는 모듈
+const path=require('path')
+//템플릿을 가져옴
+const template=require("./lib/template.js")
 
- //템플릿
-function templateHTML(title, list, body, control){
-  return `
-  <!doctype html>
-  <html>
-  <head>
-    <title>WEB1 - ${title}</title>
-    <meta charset="utf-8">
-  </head>
-  <body>
-    <h1><a href="/">WEB</a></h1>
-    ${list}
-    ${control}
-    ${body}
-    
-  </body>
-  </html>
-  `;
-}
-//파일리스트
-function templateList(filelist){
-  var list = '<ul>';
-  var i = 0;
-  while(i < filelist.length){
-    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
-    i = i + 1;
-  }
-  list = list+'</ul>';
-  return list;
-}
+
+ 
+
+
+
  //서버 가 도는 로직
 var app = http.createServer(function(request,response){
     var _url = request.url;//url가져오는 모듈
@@ -45,21 +23,22 @@ var app = http.createServer(function(request,response){
         fs.readdir('./data', function(error, filelist){//파일리스트를 만들어서 보내줌 ./data 폴더안에 있는 리스트를 가져옴=>배열로 반환
           var title = 'Welcome';
           var description = 'Hello, Node.js';
-          var list = templateList(filelist);//파일리스트를 함수안에 넣어서 반복문이 실행되고 그결과를 return함
-          var template = templateHTML(title, list, `<h2>${title}</h2>${description}`,
+          var list = template.list(filelist);//파일리스트를 함수안에 넣어서 반복문이 실행되고 그결과를 return함
+          var html = template.html(title, list, `<h2>${title}</h2>${description}`,
           `<a href="/create">create</a><br>`);//
           response.writeHead(200);
-          response.end(template);
+          response.end(html);
         })
 
       } else {
 
         fs.readdir('./data', function(error, filelist){
-          fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+          var filterId=path.parse(queryData.id).base;//다른경로로 접근하는것을 막는 방법 path.pasrse(경로).base
+          fs.readFile(`data/${filterId}`, 'utf8', function(err, description){
             
             var title = queryData.id;
-            var list = templateList(filelist);
-            var template = templateHTML(title, list, `<h2>${title}</h2>${description}`,
+            var list = template.list(filelist);
+            var html = template.html(title, list, `<h2>${title}</h2>${description}`,
             ` 
               <a href="/create">create</a><br>
               <a href="/update?id=${title}">update</a><br>
@@ -70,7 +49,7 @@ var app = http.createServer(function(request,response){
             `);
             //delete는 form에서 post형식으로 보내야한다.(아무나 지울수없도록)
             response.writeHead(200);
-            response.end(template);
+            response.end(html);
           });
         });
       }
@@ -79,12 +58,12 @@ var app = http.createServer(function(request,response){
         fs.readdir('./data', function(error, filelist){//파일리스트를 만들어서 보내줌 ./data 폴더안에 있는 리스트를 가져옴=>배열로 반환
             
             var title = "WEB-CREATE";
-            var list = templateList(filelist);//파일리스트를 함수안에 넣어서 반복문이 실행되고 그결과를 return함
+            var list = template.list(filelist);//파일리스트를 함수안에 넣어서 반복문이 실행되고 그결과를 return함
             
             fs.readFile('./forms/createform.html','utf8',function(err,data){
-                var template = templateHTML(title, list,data,'')
+                var html = template.html(title, list,data,'')
                 response.writeHead(200);
-                response.end(template);
+                response.end(html);
             })
         })
         
@@ -111,11 +90,12 @@ var app = http.createServer(function(request,response){
         
     }else if(pathname==='/update'){
       fs.readdir('./data', function(error, filelist){
-        
-        fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+        var filterId=path.parse(queryData.id).base;//다른경로로 접근하는것을 막는 방법 path.pasrse(경로).base
+        console.log(filterId)
+        fs.readFile(`data/${filterId}`, 'utf8', function(err, description){
           var title = queryData.id;
-          var list = templateList(filelist);
-          var template = templateHTML(title, list, `<h2>${title}</h2>${description}`,`
+          var list = template.list(filelist);
+          var html = template.html(title, list, `<h2>${title}</h2>${description}`,`
             <form  action="/process_update" method="POST">   
               <input type="hidden" name="ddd">
               <p><input type="hidden" value="${title}" name="id"></p>
@@ -125,7 +105,7 @@ var app = http.createServer(function(request,response){
             </form>`);
           
           response.writeHead(200);
-          response.end(template);
+          response.end(html);
         });
       });
     }else if (pathname==='/process_update'){
@@ -142,7 +122,8 @@ var app = http.createServer(function(request,response){
           var id = post.id
           var title= post.title
           var description=post.description
-          fs.rename(`data/${id}`,`data/${title}`,function(error){//일단 파일명을 바꾸고 그파일명의 내용을 변환
+          var filterId=path.parse(id).base;//다른경로로 접근하는것을 막는 방법 ..../이런식으로 상위디렉토리로 이동시키는 코드를 제외한 값을 반환(base)
+          fs.rename(`data/${filterId}`,`data/${title}`,function(error){//일단 파일명을 바꾸고 그파일명의 내용을 변환
             fs.writeFile(`data/${title}`,description,'utf8',function(){
               response.writeHead(302,{Location:`/?id=${title}`});
               response.end()
@@ -183,3 +164,7 @@ var app = http.createServer(function(request,response){
  
 });
 app.listen(3000);
+
+//크로스사이드 스크립트(xss)는 홈페이지에 어떠한 부분에 <script></script>를 이용해 해당 홈페이지를 공격하는 방식이다. 이것을방어하기 위한 기법
+//때문에<>를 다른 식으로 표현해주어야한다. 기본적으로 <는 &lt; >는 &gt;으롤 <>을 다른 방법으로표현해줄 수 있다.
+//npm 을 사용하려면 npm init을 통해 자신의 app을 npm으로 관리하도록 해준다.
