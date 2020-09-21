@@ -49,7 +49,9 @@ var app = http.createServer(function(request,response){
           response.writeHead(200);
           response.end(template);
         })
+
       } else {
+
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
             var title = queryData.id;
@@ -82,13 +84,12 @@ var app = http.createServer(function(request,response){
         //post데이터를 받는법(get방식이아닌 post방식)
         request.on('data',function(data){//포스트방식의 데이터를 받는법 데이터를 계쏙 받아 body 변수에 쌓는다.
             body=+body+data;
-            
         });
+
         request.on('end',function(){//그렇게 데이터를 쌓다가 더이상 데이터가 없으면 end 콜백함수를 '자동'으로 실행한다.
             var post =qs.parse(body)//post정보를 객체화(json) 할 수 있다.
             var title=post.title
-            
-
+            var description=post.description
         });
         response.writeHead(200)
         response.end("success")
