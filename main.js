@@ -2,7 +2,9 @@ const http = require('http');
 const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');//post를 분석하는 모듈
-const path=require('path')
+const path=require('path')//들어오는데이터 보안(상위 디렉토리로 접근 방어)
+const sanitizeHTML=require('sanitize-html')//나가는 데이터 보안(xss방어)
+
 //템플릿을 가져옴
 const template=require("./lib/template.js")
 
@@ -38,12 +40,14 @@ var app = http.createServer(function(request,response){
             
             var title = queryData.id;
             var list = template.list(filelist);
-            var html = template.html(title, list, `<h2>${title}</h2>${description}`,
+            var sanitizedTitle=sanitizeHTML(title);
+            var sanitizedDescription=sanitizeHTML(description);
+            var html = template.html(title, list, `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
             ` 
               <a href="/create">create</a><br>
-              <a href="/update?id=${title}">update</a><br>
+              <a href="/update?id=${sanitizedTitle}">update</a><br>
               <form action="/process_delete" method="post">
-                <input type="hidden" name="id" value="${title}">
+                <input type="hidden" name="id" value="${sanitizedTitle}">
                 <input type="submit" value="delete">
               </form>
             `);
@@ -168,3 +172,13 @@ app.listen(3000);
 //크로스사이드 스크립트(xss)는 홈페이지에 어떠한 부분에 <script></script>를 이용해 해당 홈페이지를 공격하는 방식이다. 이것을방어하기 위한 기법
 //때문에<>를 다른 식으로 표현해주어야한다. 기본적으로 <는 &lt; >는 &gt;으롤 <>을 다른 방법으로표현해줄 수 있다.
 //npm 을 사용하려면 npm init을 통해 자신의 app을 npm으로 관리하도록 해준다.
+//sanitize-html을 사용하여 xss을 방어해보자.
+//입력된 스크립트가 사용자에게 보여질만한 패이지에 뿌려질 값에 sanitizeHTML()하여 살균한다(민감한 스크립트가있을경우 자동으로 걸러준다. This is dirty End)
+//허용하고 싶은 태그가 있으면 살균할때 다음처럼한다. sanitizeHTML(살균할값,{
+                                      //          allowedTags : ['b','i','em'],
+                                      //          allowedAttributes : {
+                                      //                'a':['href']    
+                                      //            },
+                                      //          allowedIframHostNames : ['url']
+                                      //          })
+//처럼 한다.
