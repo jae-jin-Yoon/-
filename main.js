@@ -22,7 +22,7 @@ var app = http.createServer(function(request,response){
     if(pathname === '/'){//패스가 /일 경우
       if(queryData.id === undefined){
         
-        fs.readdir('./data', function(error, filelist){//파일리스트를 만들어서 보내줌 ./data 폴더안에 있는 리스트를 가져옴=>배열로 반환
+        fs.readdir('./data', function(error, filelist){//파일리스트를 만들어서 보내줌 ./data 폴더안에 있는 리스트를 가져옴=>배열로 반환(filelist변수에)
           var title = 'Welcome';
           var description = 'Hello, Node.js';
           var list = template.list(filelist);//파일리스트를 함수안에 넣어서 반복문이 실행되고 그결과를 return함
