@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/jmyoon8/graffiti#readme",
   "dependencies": {
-    "sanitize-html": "^1.27.4"
+    "sanitize-html": "^2.3.2"
   }
 }
